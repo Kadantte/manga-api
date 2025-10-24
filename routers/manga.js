@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const cheerio = require("cheerio");
 const {baseUrl, baseApi} = require("../constants/urls");
-const replaceMangaPage = "https://komiku.id/manga/";
+const replaceMangaPage = "https://komiku.org/manga/";
 const AxiosService = require("../helpers/axiosService");
 
 // manga popular ----Ignore this for now --------
@@ -34,7 +34,7 @@ router.get("/manga/page/:pagenumber", async (req, res) => {
         title = $(el).find(".kan > a").find("h3").text().trim();
         endpoint = $(el).find("a").attr("href").replace(replaceMangaPage, "");
         type = $(el).find(".bgei > a").find(".tpe1_inf > b").text();
-        updated_on = $(el).find(".kan > span").text().split("• ")[1].trim();
+        updated_on = $(el).find(".kan > .judul2").text().split("|")[1].trim();
         thumb = $(el).find(".bgei > a").find("img").attr("src");
         chapter = $(el)
           .find("div.kan > div:nth-child(5) > a > span:nth-child(2)")
@@ -60,6 +60,7 @@ router.get("/manga/page/:pagenumber", async (req, res) => {
       manga_list: [],
     });
   } catch (err) {
+    console.log(err);
     res.send({
       status: false,
       message: err,
@@ -96,7 +97,7 @@ router.get("/manga/detail/:slug", async (req, res) => {
     obj.thumb = element.find(".ims > img").attr("src");
 
     element.find(".genre > li").each((idx, el) => {
-      let genre_name = $(el).find("a").text();
+      let genre_name = $(el).find("a").text().trim();
       genre_list.push({
         genre_name,
       });
@@ -184,18 +185,17 @@ router.get("/genres", async (req, res) => {
     const $ = cheerio.load(response.data);
     let list_genre = [];
     let obj = {};
-    $("#Filter > form > select:nth-child(2)")
+    $("#Filter > form > select:nth-child(4)")
       .find("option")
       .each((idx, el) => {
         if ($(el).text() !== "Genre 1") {
           const endpoint = $(el)
             .text()
             .trim()
-            .split(" ")
-            .join("-")
+            .split(" ")[0]
             .toLowerCase();
           list_genre.push({
-            genre_name: $(el).text(),
+            genre_name: $(el).text().trim(),
             endpoint,
           });
         }
@@ -218,8 +218,8 @@ router.get("/genres/:slug/:pagenumber", async (req, res) => {
   const pagenumber = req.params.pagenumber;
   const path =
     pagenumber === "1"
-      ? `genre/${slug}/?orderby=modified&genre2&status&category_name`
-      : `manga/page/${pagenumber}/?orderby=modified&category_name&genre=${slug}&genre2&status`;
+      ? `/genre/${slug}/?orderby=modified&genre2&status&category_name`
+      : `/manga/page/${pagenumber}/?orderby=modified&category_name&genre=${slug}&genre2&status`;
   const url = baseApi + path;
 
   try {
@@ -259,8 +259,8 @@ router.get("/manga/popular/:pagenumber", async (req, res) => {
   const pagenumber = req.params.pagenumber;
   const path =
     pagenumber === "1"
-      ? `other/rekomendasi/`
-      : `other/rekomendasi/page/${pagenumber}/`;
+      ? `/other/rekomendasi/`
+      : `/other/rekomendasi/page/${pagenumber}/`;
   const url = baseApi + path;
 
   try {
@@ -308,8 +308,8 @@ router.get("/recommended/:pagenumber", async (req, res) => {
   const pagenumber = req.params.pagenumber;
   const path =
     pagenumber === "1"
-      ? `other/hot/`
-      : `other/hot/page/${pagenumber}/`;
+      ? `/other/hot/`
+      : `/other/hot/page/${pagenumber}/`;
   const url = baseApi + path;
   try {
     const response = await AxiosService(url);
@@ -361,8 +361,8 @@ const getManhuaManhwa = async (req, res, type) => {
   let pagenumber = req.params.pagenumber;
   let path =
     pagenumber === "1"
-      ? `manga/?orderby=&category_name=${type}&genre=&genre2=&status=`
-      : `manga/page/${pagenumber}/?orderby&category_name=${type}&genre&genre2&status`;
+      ? `/manga/?orderby=&category_name=${type}&genre=&genre2=&status=`
+      : `/manga/page/${pagenumber}/?orderby&category_name=${type}&genre&genre2&status`;
   const url = baseApi + path;
   try {
     console.log(url);
